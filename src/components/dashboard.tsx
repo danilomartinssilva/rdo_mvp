@@ -7,47 +7,78 @@ import {
   FilePlus2,
   LogOut,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { RdoForm } from "@/components/rdo/rdo-form";
+import { createClient } from "@/lib/supabase/client";
 import { statusLabel, type RdoStatus } from "@/lib/types";
 
-const records: { date: string; status: RdoStatus; summary: string }[] = [
-  { date: "09 set. 2026", status: "DRAFT", summary: "Concretagem de pilares" },
-  {
-    date: "08 set. 2026",
-    status: "PENDING_APPROVAL",
-    summary: "Montagem de formas",
-  },
-  {
-    date: "07 set. 2026",
-    status: "APPROVED",
-    summary: "Alvenaria do pavimento térreo",
-  },
-];
 const colors: Record<RdoStatus, string> = {
   DRAFT: "bg-stone-100 text-stone-700",
   PENDING_APPROVAL: "bg-amber-100 text-amber-800",
   APPROVED: "bg-emerald-100 text-emerald-800",
   WITH_NOTES: "bg-red-100 text-red-800",
 };
+type Project = { id: string; name: string };
+type RdoListItem = {
+  id: string;
+  date: string;
+  status: RdoStatus;
+  rdo_activities: { description: string }[];
+};
 
 export function Dashboard() {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [name, setName] = useState("");
+  const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [rdos, setRdos] = useState<RdoListItem[]>([]);
+  const [rdoError, setRdoError] = useState("");
+
+  async function signOut() {
+    await createClient().auth.signOut();
+    setProjects([]);
+    setRdos([]);
+    router.replace("/login");
+  }
 
   useEffect(() => {
+    fetch("/api/me").then(async (response) => {
+      if (response.status === 401) {
+        router.push("/login");
+        return null;
+      }
+      return response.ok ? response.json() : null;
+    }).then((profile: { name: string } | null) => setName(profile?.name ?? ""));
+
     fetch("/api/projects")
       .then(async (response) => response.ok ? response.json() : [])
-      .then((data: { id: string; name: string }[]) => {
+      .then((data: Project[]) => {
         setProjects(data);
         setProjectId(data[0]?.id ?? "");
       })
       .finally(() => setLoadingProjects(false));
-  }, []);
+  }, [router]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    fetch(`/api/projects/${projectId}/rdos`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error((await response.json()).error || "Não foi possível carregar os relatórios.");
+        return response.json();
+      })
+      .then((data: RdoListItem[]) => {
+        setRdos(data);
+        setRdoError("");
+      })
+      .catch((error) => setRdoError(error instanceof Error ? error.message : "Não foi possível carregar os relatórios."))
+  }, [projectId]);
 
   if (editing) return <RdoForm projectId={projectId} onBack={() => setEditing(false)} />;
+  const approved = rdos.filter((rdo) => rdo.status === "APPROVED").length;
+  const pending = rdos.filter((rdo) => rdo.status === "PENDING_APPROVAL").length;
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-stone-50 pb-8">
       <header className="bg-stone-950 px-5 pb-7 pt-5 text-white">
@@ -56,9 +87,9 @@ export function Dashboard() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400">
               Canteiro
             </p>
-            <h1 className="mt-1 text-2xl font-bold">Olá, Mariana</h1>
+            <h1 className="mt-1 text-2xl font-bold">Olá{name ? `, ${name}` : ""}</h1>
           </div>
-          <button aria-label="Sair" className="rounded-full bg-white/10 p-2.5">
+          <button onClick={signOut} aria-label="Sair" className="rounded-full bg-white/10 p-2.5">
             <LogOut size={18} />
           </button>
         </div>
@@ -81,15 +112,15 @@ export function Dashboard() {
       <div className="px-4">
         <section className="-mt-3 grid grid-cols-3 rounded-2xl bg-white p-3 shadow-sm">
           <div className="border-r border-stone-100 text-center">
-            <strong className="block text-xl">12</strong>
-            <span className="text-xs text-stone-500">Este mês</span>
+            <strong className="block text-xl">{rdos.length}</strong>
+            <span className="text-xs text-stone-500">Na obra</span>
           </div>
           <div className="border-r border-stone-100 text-center">
-            <strong className="block text-xl text-amber-700">2</strong>
+            <strong className="block text-xl text-amber-700">{pending}</strong>
             <span className="text-xs text-stone-500">Pendentes</span>
           </div>
           <div className="text-center">
-            <strong className="block text-xl text-emerald-700">10</strong>
+            <strong className="block text-xl text-emerald-700">{approved}</strong>
             <span className="text-xs text-stone-500">Aprovados</span>
           </div>
         </section>
@@ -111,9 +142,12 @@ export function Dashboard() {
             </button>
           </div>
           <div className="space-y-2">
-            {records.map((record) => (
+            {rdoError && <p role="alert" className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{rdoError}</p>}
+            {!rdoError && rdos.length === 0 && <p className="rounded-2xl border border-dashed border-stone-300 p-4 text-sm text-stone-500">Nenhum RDO registrado para esta obra.</p>}
+            {rdos.map((record) => (
               <button
-                key={record.date}
+                key={record.id}
+                onClick={() => router.push(`/rdos/${record.id}`)}
                 className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-left shadow-sm hover:border-amber-300"
               >
                 <div className="rounded-xl bg-stone-100 p-2.5 text-stone-700">
@@ -122,7 +156,7 @@ export function Dashboard() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <strong className="text-sm text-stone-900">
-                      {record.date}
+                      {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${record.date}T12:00:00`))}
                     </strong>
                     <span
                       className={`rounded-full px-2 py-1 text-[11px] font-semibold ${colors[record.status]}`}
@@ -131,7 +165,7 @@ export function Dashboard() {
                     </span>
                   </div>
                   <p className="mt-1 truncate text-sm text-stone-500">
-                    {record.summary}
+                    {record.rdo_activities[0]?.description ?? "Sem atividades registradas"}
                   </p>
                 </div>
                 <ChevronRight size={18} className="text-stone-400" />
