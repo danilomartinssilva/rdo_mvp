@@ -156,14 +156,20 @@ export default function RdoDetailPage() {
               RDO de {formattedDate}
             </h1>
           </div>
-          <a
-            href={`/api/rdos/${rdo.id}/pdf`}
-            target="_blank"
-            className="grid size-10 place-items-center rounded-full bg-stone-950 text-white"
-            aria-label="Baixar PDF"
-          >
-            <Download size={18} />
-          </a>
+          <div className="flex items-center gap-2">
+            <div className="grid h-10 w-14 place-items-center rounded-lg bg-stone-950 text-center leading-none">
+              <span className="text-base font-bold text-amber-400">C</span>
+              <span className="text-[7px] font-semibold tracking-[0.12em] text-white">CANTEIRO</span>
+            </div>
+            <a
+              href={`/api/rdos/${rdo.id}/pdf`}
+              target="_blank"
+              className="grid size-10 place-items-center rounded-full bg-stone-950 text-white"
+              aria-label="Baixar PDF"
+            >
+              <Download size={18} />
+            </a>
+          </div>
         </div>
       </header>
       <div className="space-y-4 px-4 py-5">
