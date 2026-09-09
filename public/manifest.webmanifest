@@ -1,0 +1,9 @@
+{
+  "name": "Canteiro - RDO Digital",
+  "short_name": "Canteiro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f6f3",
+  "theme_color": "#1c1917",
+  "icons": []
+}

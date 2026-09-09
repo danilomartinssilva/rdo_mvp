@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  FIELD
+  INSPECTOR
+}
+
+enum RdoStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  WITH_NOTES
+}
+
+enum WeatherStatus {
+  GOOD
+  RAINY
+  IMPRACTICABLE
+}
+
+enum ActivityStatus {
+  COMPLETED
+  IN_PROGRESS
+  STOPPED
+}
+
+enum OccurrenceType {
+  STOPPAGE
+  ACCIDENT
+  SUPPLY_DELAY
+  TECHNICAL_VISIT
+  OTHER
+}
+
+model User {
+  id              String        @id @db.Uuid
+  name            String
+  email           String        @unique
+  role            UserRole      @default(FIELD)
+  projectMemberships ProjectUser[]
+  rdosCreated     Rdo[]         @relation("RdoCreatedBy")
+  approvals       RdoApproval[]
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  @@map("users")
+}
+
+model Project {
+  id              String        @id @default(uuid()) @db.Uuid
+  name            String
+  address         String
+  clientName      String        @map("client_name")
+  startDate       DateTime      @db.Date @map("start_date")
+  dueDate         DateTime?     @db.Date @map("due_date")
+  technicalLead   String?       @map("technical_lead")
+  isActive        Boolean       @default(true) @map("is_active")
+  memberships     ProjectUser[]
+  rdos            Rdo[]
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  @@map("projects")
+}
+
+model ProjectUser {
+  projectId String @map("project_id") @db.Uuid
+  userId    String @map("user_id") @db.Uuid
+  role      UserRole?
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([projectId, userId])
+  @@map("project_users")
+}
+
+model Rdo {
+  id               String        @id @default(uuid()) @db.Uuid
+  projectId        String        @map("project_id") @db.Uuid
+  date             DateTime      @db.Date
+  weatherMorning   WeatherStatus @map("weather_morning")
+  weatherAfternoon WeatherStatus @map("weather_afternoon")
+  status           RdoStatus     @default(DRAFT)
+  notes            String?
+  createdById      String        @map("created_by") @db.Uuid
+  submittedAt      DateTime?     @map("submitted_at")
+  project          Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy        User          @relation("RdoCreatedBy", fields: [createdById], references: [id])
+  labor            RdoLabor[]
+  equipment        RdoEquipment[]
+  activities       RdoActivity[]
+  occurrences      RdoOccurrence[]
+  photos           RdoPhoto[]
+  approvals        RdoApproval[]
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  @@unique([projectId, date])
+  @@index([projectId, status, date])
+  @@map("rdos")
+}
+
+model RdoLabor {
+  id           String  @id @default(uuid()) @db.Uuid
+  rdoId        String  @map("rdo_id") @db.Uuid
+  roleName     String  @map("role_name")
+  quantity     Int
+  isOutsourced Boolean @default(false) @map("is_outsourced")
+  rdo          Rdo     @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+  @@map("rdo_labor")
+}
+
+model RdoEquipment {
+  id       String @id @default(uuid()) @db.Uuid
+  rdoId    String @map("rdo_id") @db.Uuid
+  typeName String @map("type_name")
+  quantity Int
+  rdo      Rdo    @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+  @@map("rdo_equipment")
+}
+
+model RdoActivity {
+  id          String         @id @default(uuid()) @db.Uuid
+  rdoId       String         @map("rdo_id") @db.Uuid
+  description String
+  status      ActivityStatus @default(IN_PROGRESS)
+  rdo         Rdo            @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+  @@map("rdo_activities")
+}
+
+model RdoOccurrence {
+  id          String         @id @default(uuid()) @db.Uuid
+  rdoId       String         @map("rdo_id") @db.Uuid
+  type        OccurrenceType @default(OTHER)
+  description String
+  rdo         Rdo            @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+  @@map("rdo_occurrences")
+}
+
+model RdoPhoto {
+  id        String @id @default(uuid()) @db.Uuid
+  rdoId     String @map("rdo_id") @db.Uuid
+  path      String
+  caption   String?
+  position  Int    @default(0)
+  rdo       Rdo    @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+  @@map("rdo_photos")
+}
+
+model RdoApproval {
+  id           String    @id @default(uuid()) @db.Uuid
+  rdoId        String    @map("rdo_id") @db.Uuid
+  approvedById String    @map("approved_by") @db.Uuid
+  status       RdoStatus
+  comment      String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  rdo          Rdo       @relation(fields: [rdoId], references: [id], onDelete: Cascade)
+  approvedBy   User      @relation(fields: [approvedById], references: [id])
+  @@map("rdo_approvals")
+}
