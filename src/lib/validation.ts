@@ -8,6 +8,12 @@ export const projectSchema = z.object({
   name: z.string().min(2).max(120), address: z.string().min(5).max(250),
   client_name: z.string().min(2).max(120), start_date: z.string().date(),
   due_date: z.string().date().nullable().optional(), technical_lead: z.string().max(120).nullable().optional(),
+  description: z.string().max(3000).nullable().optional(),
+  postal_code: z.string().max(12).nullable().optional(), street: z.string().max(150).nullable().optional(),
+  address_number: z.string().max(20).nullable().optional(), complement: z.string().max(100).nullable().optional(),
+  district: z.string().max(100).nullable().optional(), city: z.string().max(100).nullable().optional(),
+  state: z.string().length(2).nullable().optional(), latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 export const rdoSchema = z.object({

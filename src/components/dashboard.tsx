@@ -2,12 +2,14 @@
 
 import {
   CalendarDays,
+  Building2,
   ChevronRight,
   ClipboardList,
   FilePlus2,
   LogOut,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RdoForm } from "@/components/rdo/rdo-form";
 import { createClient } from "@/lib/supabase/client";
@@ -89,9 +91,7 @@ export function Dashboard() {
             </p>
             <h1 className="mt-1 text-2xl font-bold">Olá{name ? `, ${name}` : ""}</h1>
           </div>
-          <button onClick={signOut} aria-label="Sair" className="rounded-full bg-white/10 p-2.5">
-            <LogOut size={18} />
-          </button>
+          <div className="flex gap-2"><Link href="/obras" aria-label="Gerenciar obras" className="rounded-full bg-white/10 p-2.5"><Building2 size={18} /></Link><button onClick={signOut} aria-label="Sair" className="rounded-full bg-white/10 p-2.5"><LogOut size={18} /></button></div>
         </div>
         <label className="mt-6 block rounded-xl bg-white/10 px-4 py-3 text-left">
           <span>

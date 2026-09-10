@@ -21,7 +21,7 @@ type RdoDetail = {
   notes: string | null;
   weather_morning: string;
   weather_afternoon: string;
-  projects: { name: string; address: string; client_name: string };
+  projects: { name: string; address: string; client_name: string; logo_path: string | null };
   users: { name: string } | null;
   rdo_labor: {
     id: string;
@@ -157,9 +157,8 @@ export default function RdoDetailPage() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <div className="grid h-10 w-14 place-items-center rounded-lg bg-stone-950 text-center leading-none">
-              <span className="text-base font-bold text-amber-400">C</span>
-              <span className="text-[7px] font-semibold tracking-[0.12em] text-white">CANTEIRO</span>
+            <div className="grid h-10 w-14 place-items-center overflow-hidden rounded-lg bg-stone-950 text-center leading-none">
+              {rdo.projects.logo_path ? <img src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/project-logos/${rdo.projects.logo_path}`} alt={`Logo ${rdo.projects.name}`} className="size-full object-contain bg-white" /> : <><span className="text-base font-bold text-amber-400">C</span><span className="text-[7px] font-semibold tracking-[0.12em] text-white">CANTEIRO</span></>}
             </div>
             <a
               href={`/api/rdos/${rdo.id}/pdf`}

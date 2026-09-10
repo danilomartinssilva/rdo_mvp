@@ -61,6 +61,17 @@ model Project {
   startDate       DateTime      @db.Date @map("start_date")
   dueDate         DateTime?     @db.Date @map("due_date")
   technicalLead   String?       @map("technical_lead")
+  description     String?
+  logoPath        String?       @map("logo_path")
+  postalCode      String?       @map("postal_code")
+  street          String?
+  addressNumber   String?       @map("address_number")
+  complement      String?
+  district        String?
+  city            String?
+  state           String?
+  latitude        Float?
+  longitude       Float?
   isActive        Boolean       @default(true) @map("is_active")
   memberships     ProjectUser[]
   rdos            Rdo[]

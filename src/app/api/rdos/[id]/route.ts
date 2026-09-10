@@ -8,7 +8,7 @@ export async function GET(_: Request, ctx: RouteContext<"/api/rdos/[id]">) {
   const { data, error } = await auth.supabase
     .from("rdos")
     .select(
-      "*, projects(name, address, client_name), users!rdos_created_by_fkey(name), rdo_labor(*), rdo_equipment(*), rdo_activities(*), rdo_occurrences(*), rdo_photos(*), rdo_approvals(*, users(name))",
+      "*, projects(name, address, client_name, logo_path, latitude, longitude), users!rdos_created_by_fkey(name), rdo_labor(*), rdo_equipment(*), rdo_activities(*), rdo_occurrences(*), rdo_photos(*), rdo_approvals(*, users(name))",
     )
     .eq("id", id)
     .single();
