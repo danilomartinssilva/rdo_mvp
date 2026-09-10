@@ -1,0 +1,16 @@
+create table public.user_module_access (user_id uuid not null references public.users(id) on delete cascade, module text not null check (module in ('RDO','BUDGET')), granted_by uuid references public.users(id), created_at timestamptz not null default now(), primary key (user_id,module));
+alter table public.user_module_access enable row level security;
+create function public.has_budget_access() returns boolean language sql stable security definer set search_path=public as $$ select exists(select 1 from public.users where id=auth.uid() and role='ADMIN') or exists(select 1 from public.user_module_access where user_id=auth.uid() and module='BUDGET'); $$;
+create policy "users read own modules" on public.user_module_access for select using (user_id=auth.uid() or exists(select 1 from public.users where id=auth.uid() and role='ADMIN'));
+create policy "admins manage modules" on public.user_module_access for all using (exists(select 1 from public.users where id=auth.uid() and role='ADMIN')) with check (exists(select 1 from public.users where id=auth.uid() and role='ADMIN'));
+create policy "admins read users" on public.users for select using (exists(select 1 from public.users where id=auth.uid() and role='ADMIN') or id=auth.uid());
+drop policy if exists "commercial manage clients" on public.clients;
+create policy "budget users manage clients" on public.clients for all using (public.has_budget_access()) with check (public.has_budget_access());
+drop policy if exists "members read inputs" on public.inputs; drop policy if exists "commercial manage inputs" on public.inputs;
+create policy "budget users manage inputs" on public.inputs for all using (public.has_budget_access()) with check (public.has_budget_access());
+drop policy if exists "members read compositions" on public.compositions; drop policy if exists "commercial manage compositions" on public.compositions;
+create policy "budget users manage compositions" on public.compositions for all using (public.has_budget_access()) with check (public.has_budget_access());
+drop policy if exists "members read composition inputs" on public.composition_inputs; drop policy if exists "commercial manage composition inputs" on public.composition_inputs;
+create policy "budget users manage composition inputs" on public.composition_inputs for all using (public.has_budget_access()) with check (public.has_budget_access());
+drop policy if exists "members access budgets" on public.budgets; drop policy if exists "authors manage budgets" on public.budgets;
+create policy "budget users access budgets" on public.budgets for all using (public.has_budget_access() and public.is_project_member(project_id)) with check (public.has_budget_access() and public.is_project_member(project_id));
