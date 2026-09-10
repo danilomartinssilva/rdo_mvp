@@ -9,7 +9,8 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const items = [
   {
@@ -36,6 +37,10 @@ const items = [
 
 export function BudgetNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [allowed,setAllowed]=useState<boolean|null>(null);
+  useEffect(()=>{fetch('/api/modules').then(async response=>{const modules=response.ok?await response.json():[];const canAccess=modules.some((module:{code:string})=>module.code==='BUDGET');setAllowed(canAccess);if(!canAccess)router.replace('/')})},[router]);
+  if(allowed!==true)return null;
   return (
     <nav
       aria-label="Navegação de Orçamentos"
