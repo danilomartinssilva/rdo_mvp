@@ -1,0 +1,6 @@
+create table public.reference_tables (id uuid primary key default gen_random_uuid(), name text not null, source text not null, reference_month text, created_by uuid not null references public.users(id), created_at timestamptz not null default now());
+create table public.reference_items (id uuid primary key default gen_random_uuid(), reference_table_id uuid not null references public.reference_tables(id) on delete cascade, code text, description text not null, unit text not null, unit_price numeric(14,4) not null default 0);
+alter table public.reference_tables enable row level security;
+alter table public.reference_items enable row level security;
+create policy "commercial manage reference tables" on public.reference_tables for all using (exists (select 1 from public.users where id = auth.uid() and role in ('ADMIN','COMMERCIAL'))) with check (exists (select 1 from public.users where id = auth.uid() and role in ('ADMIN','COMMERCIAL')));
+create policy "commercial manage reference items" on public.reference_items for all using (exists (select 1 from public.reference_tables where id = reference_table_id and created_by = auth.uid())) with check (exists (select 1 from public.reference_tables where id = reference_table_id and created_by = auth.uid()));
